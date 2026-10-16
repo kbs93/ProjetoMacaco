@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>3D Monkey with 3D Glasses - Three.js</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+  <script type="module">
+    import { pipeline } from 'https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2';
+    window.pipelineTransformers = pipeline;
+  </script>
+  <link rel="stylesheet" href="./css/style.css">
+</head>
+<body class="relative text-slate-100">
+
+  <div id="canvas-container"></div>
+  
+  <div id="speech-bubble">
+    <div id="speech-text-area">
+      <span id="speech-text">OLÁ! BEM-VINDO AO MEU VÍDEO!</span>
+    </div>
+  </div>
+
+  <audio id="audio-player" preload="auto" crossorigin="anonymous"></audio>
+  <input type="file" id="audio-input" accept="audio/*" class="hidden" />
+
+  <div id="subtitle-control-panel" style="position: fixed; bottom: 445px; left: 20px; width: 300px; z-index: 20; background: rgba(2, 6, 23, 0.95); backdrop-filter: blur(12px); padding: 14px; border-radius: 18px; border: 1px solid rgba(6, 182, 212, 0.5); box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5); display: flex; flex-direction: column; gap: 10px; box-sizing: border-box;">
+    <div style="display: flex; flex-direction: column; gap: 4px; background: rgba(15, 23, 42, 0.8); padding: 8px; border-radius: 12px; border: 1px solid #1e293b;">
+      <label style="font-size: 9px; color: #22d3ee; font-weight: bold; letter-spacing: 0.05em;">FRASE ATUAL NO BALÃO (EDITÁVEL):</label>
+      <input type="text" id="caption-current-live-input" style="width: 100%; padding: 5px 8px; font-size: 12px; background: #020617; border: 1px solid #334155; border-radius: 8px; color: #fde047; font-weight: 500; outline: none; box-sizing: border-box;" value="Olá! Bem-vindo ao meu vídeo!" />
+    </div>
+
+    <div style="display: flex; align-items: center; gap: 6px;">
+      <button id="cap-prev-btn" title="Voltar" style="flex: 1; padding: 8px; font-size: 12px; font-weight: bold; border-radius: 12px; background: #1e293b; color: #e2e8f0; border: 1px solid #334155; cursor: pointer; display: flex; align-items: center; justify-content: center;">◀ Voltar</button>
+      <button id="cap-next-btn" title="Avançar" style="flex: 1.5; padding: 8px; font-size: 12px; font-weight: bold; border-radius: 12px; background: linear-gradient(to right, #0891b2, #2563eb); color: #ffffff; border: 1px solid rgba(34, 211, 238, 0.4); cursor: pointer; display: flex; align-items: center; justify-content: center;">Avançar ▶</button>
+      <button id="cap-reset-btn" title="Reiniciar" style="padding: 8px 10px; font-size: 12px; font-weight: bold; border-radius: 12px; background: #1e293b; color: #cbd5e1; border: 1px solid #334155; cursor: pointer;">🔄</button>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding-top: 4px; border-top: 1px solid #1e293b;">
+      <div style="display: flex; flex-direction: column; gap: 2px;">
+        <label style="font-size: 9px; color: #94a3b8;">FONTE</label>
+        <select id="cap-font-family" style="width: 100%; padding: 4px 6px; font-size: 11px; background: #0f172a; border: 1px solid #334155; border-radius: 8px; color: #e2e8f0; outline: none; cursor: pointer;">
+          <option value="'Inter', sans-serif">Inter</option>
+          <option value="'Comic Sans MS', cursive, sans-serif">Cartoon</option>
+          <option value="Impact, fantasy">Impact</option>
+          <option value="'Courier New', monospace">Mono</option>
+          <option value="Georgia, serif">Serif</option>
+        </select>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 2px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; font-size: 9px; color: #94a3b8;">
+          <span>TAMANHO BASE</span>
+          <span id="cap-font-size-val" style="color: #22d3ee; font-family: monospace;">22px</span>
+        </div>
+        <input type="range" id="cap-font-size" min="14" max="40" step="1" value="22" style="width: 100%; height: 4px; margin-top: 6px; cursor: pointer;">
+      </div>
+    </div>
+
+    <div style="display: flex; align-items: center; justify-content: space-between; gap: 4px; padding-top: 4px; border-top: 1px solid #1e293b;">
+      <div style="display: flex; align-items: center; gap: 4px;">
+        <span style="font-size: 9px; color: #94a3b8;">TXT:</span>
+        <input type="color" id="cap-text-color" value="#111827" style="width: 20px; height: 20px; border-radius: 4px; cursor: pointer; border: 1px solid #475569; background: transparent; padding: 0;">
+      </div>
+      <div style="display: flex; align-items: center; gap: 4px;">
+        <span style="font-size: 9px; color: #94a3b8;">BALÃO:</span>
+        <input type="color" id="cap-bg-color" value="#ffffff" style="width: 20px; height: 20px; border-radius: 4px; cursor: pointer; border: 1px solid #475569; background: transparent; padding: 0;">
+      </div>
+      <div style="display: flex; align-items: center; gap: 4px;">
+        <span style="font-size: 9px; color: #fde047; font-weight: bold;">DESTAQUE:</span>
+        <input type="color" id="cap-highlight-color" value="#fef08a" title="Cor de fundo da palavra falada" style="width: 20px; height: 20px; border-radius: 4px; cursor: pointer; border: 1px solid #facc15; background: transparent; padding: 0;">
+      </div>
+      <div style="display: flex; align-items: center; gap: 2px;">
+        <button id="cap-bold-btn" style="width: 24px; height: 24px; font-size: 10px; font-weight: bold; border-radius: 4px; background: #0891b2; color: #ffffff; border: 1px solid #22d3ee; cursor: pointer;">B</button>
+        <button id="cap-italic-btn" style="width: 24px; height: 24px; font-size: 10px; font-style: italic; font-weight: 600; border-radius: 4px; background: #1e293b; color: #cbd5e1; border: 1px solid #334155; cursor: pointer;">I</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="script-side-panel" style="position: fixed; top: 28px; min-height: 200px; max-height: calc(100vh - 48px); overflow-y: auto; left: 332px; width: 300px; z-index: 25; background: rgba(2, 6, 23, 0.95); backdrop-filter: blur(14px); padding: 14px; border-radius: 18px; border: 1px solid rgba(6, 182, 212, 0.5); box-shadow: 0 25px 35px -5px rgba(0, 0, 0, 0.6); display: flex; flex-direction: column; gap: 10px; box-sizing: border-box;">
+    <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #1e293b; padding-bottom: 8px;">
+      <div style="display: flex; align-items: center; gap: 6px;">
+        <span style="font-size: 13px;">💬</span>
+        <span style="font-size: 11px; font-weight: bold; color: #22d3ee; letter-spacing: 0.05em;">ROTEIRO &amp; LEGENDA</span>
+      </div>
+      <span id="caption-step-counter" style="font-size: 10px; font-family: monospace; padding: 2px 8px; border-radius: 9999px; background: #1e293b; border: 1px solid #334155; color: #67e8f9; font-weight: bold;">1 / 2</span>
+    </div>
+
+    <button id="transcribe-chunk-btn" type="button" style="width: 100%; padding: 8px 10px; font-size: 11px; font-weight: bold; border-radius: 12px; background: linear-gradient(to right, #ea580c, #f97316); color: #ffffff; border: 1px solid rgba(251, 146, 60, 0.4); box-shadow: 0 4px 10px rgba(234, 88, 12, 0.3); cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;">
+      <span>🎙️</span> Transcrever Trecho Pausado
+    </button>
+
+    <button id="export-vtt-btn" type="button" style="width: 100%; padding: 8px 10px; font-size: 11px; font-weight: bold; border-radius: 12px; background: #047857; color: #ffffff; border: 1px solid rgba(52, 211, 153, 0.3); box-shadow: 0 4px 10px rgba(4, 120, 87, 0.3); cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;">
+      <span>💾</span> Baixar Legenda (.VTT)
+    </button>
+
+    <div style="display: flex; align-items: center; justify-content: space-between; padding-top: 2px;">
+      <span style="font-size: 10px; color: #94a3b8; font-weight: 600;">ROTEIRO (1 FRASE POR LINHA):</span>
+      <button id="cap-split-sentences-btn" type="button" style="background: none; border: none; font-size: 10px; color: #22d3ee; text-decoration: underline; cursor: pointer; padding: 0;">Dividir por pontos</button>
+    </div>
+
+    <textarea id="caption-script-input" style="display: block; width: 100%; height: 350px; min-height: 120px; max-height: 80vh; overflow-y: auto; padding: 12px; font-size: 12px; line-height: 1.5; background: #0b1120; border: 1px solid #1e293b; border-radius: 12px; color: #f8fafc; outline: none; resize: vertical; box-sizing: border-box; font-family: inherit;" placeholder="Cole seu texto aqui...">Olá! Bem-vindo ao meu vídeo!</textarea>
+  </div>
+
+  <div id="audio-player-bar" class="absolute bottom-[310px] left-5 z-20 flex flex-col gap-2 bg-slate-950/85 backdrop-blur-md p-3 rounded-2xl border border-slate-700/70 shadow-2xl w-72 select-none box-border">
+    <div class="flex items-center gap-1.5 text-[10px] font-mono text-cyan-400">
+      <span id="player-time-current">00:00</span>
+      <input type="range" id="player-progress" min="0" max="100" value="0" step="0.1" class="w-full h-1 cursor-pointer accent-cyan-500">
+      <span id="player-time-total" class="text-slate-400">00:00</span>
+    </div>
+
+    <div class="flex items-center justify-center gap-2 py-0.5">
+      <button id="player-rw-btn" title="Voltar 5s" class="w-8 h-8 rounded-full bg-slate-800/90 hover:bg-slate-700 text-slate-300 flex items-center justify-center transition-all border border-slate-700 active:scale-90 text-xs">⏮</button>
+      <button id="player-stop-btn" title="Parar" class="w-8 h-8 rounded-full bg-slate-800/90 hover:bg-slate-700 text-slate-300 flex items-center justify-center transition-all border border-slate-700 active:scale-90 text-xs">⏹</button>
+      <button id="player-master-play-btn" title="Reproduzir / Pausar" class="w-9 h-9 rounded-full bg-cyan-600 hover:bg-cyan-500 text-white flex items-center justify-center transition-all shadow-[0_0_12px_rgba(6,182,212,0.5)] active:scale-90 text-sm">▶</button>
+      <button id="player-ff-btn" title="Avançar 5s" class="w-8 h-8 rounded-full bg-slate-800/90 hover:bg-slate-700 text-slate-300 flex items-center justify-center transition-all border border-slate-700 active:scale-90 text-xs">⏭</button>
+    </div>
+
+    <div class="flex items-center justify-between pt-1 border-t border-slate-800/80">
+      <button id="player-speed-badge" class="px-2 py-0.5 text-[10px] font-semibold rounded-md bg-slate-800 hover:bg-slate-700 text-cyan-400 border border-slate-700 transition-all active:scale-95">VEL: 1.00x ▾</button>
+      <div class="flex items-center gap-1.5">
+        <span class="text-[10px] text-slate-400">🔊</span>
+        <input type="range" id="player-volume" min="0" max="1" step="0.05" value="1" class="w-20 h-1 cursor-pointer accent-cyan-500">
+      </div>
+    </div>
+  </div>
+
+  <footer class="absolute bottom-5 left-5 z-10 flex flex-col gap-2 bg-slate-900/90 backdrop-blur-md p-3 rounded-2xl border border-slate-700/70 shadow-2xl w-72">
+    <button id="record-video-btn" class="w-full px-3.5 py-2 text-xs font-semibold rounded-xl bg-red-600 hover:bg-red-500 text-white transition-all shadow-lg active:scale-95 text-center flex items-center justify-center gap-2">
+      <span class="inline-block w-2.5 h-2.5 rounded-full bg-white animate-pulse"></span> Gravar Vídeo
+    </button>
+    <div class="grid grid-cols-2 gap-1.5">
+      <button id="load-file-btn" class="w-full py-2 text-[11px] font-semibold rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 transition-all border border-slate-700 active:scale-95 text-center">Carregar Áudio</button>
+      <button id="reset-cam-btn" class="w-full py-2 text-[11px] font-semibold rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 transition-all border border-slate-700 active:scale-95 text-center">Resetar Câmera</button>
+    </div>
+    
+    <select id="voice-effect-select" class="w-full px-2.5 py-1.5 text-xs font-semibold rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 transition-all border border-slate-700 focus:outline-none cursor-pointer text-center">
+      <option value="0">1. Voz: Natural</option>
+      <option value="1">2. Calma / Aveludada</option>
+      <option value="2">3. Séria / Confiante</option>
+      <option value="3">4. Extrovertida / Energética</option>
+      <option value="4">5. Radialista / Podcast FM</option>
+      <option value="5">6. Intimista / Noturna</option>
+      <option value="6">7. Alegre / Animada</option>
+      <option value="7">8. Grave / Profunda</option>
+      <option value="8">9. Infantil / Brincalhona</option>
+    </select>
+
+    <div class="grid grid-cols-2 gap-1.5">
+      <button id="toggle-track-btn" class="w-full py-1.5 text-[11px] font-semibold rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white transition-all shadow-md active:scale-95 text-center">Olhar Clique: Ativo</button>
+      <button id="toggle-glasses-btn" class="w-full py-1.5 text-[11px] font-semibold rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 transition-all border border-slate-700 active:scale-95 text-center">Tirar Óculos</button>
+    </div>
+
+    <div class="flex items-center justify-between gap-2 pt-1 border-t border-slate-800">
+      <button id="toggle-bubble-btn" class="flex-1 py-1 text-[11px] font-semibold rounded-lg bg-slate-800 hover:bg-slate-700 text-cyan-400 border border-slate-700 transition-all">Ocultar Balão</button>
+      <div class="flex items-center gap-1.5">
+        <span class="text-[10px] text-slate-400 font-mono">TAM:</span>
+        <input type="range" id="bubble-scale" min="0.5" max="2.0" step="0.05" value="1.0" class="w-16 h-1 cursor-pointer accent-cyan-500">
+        <span id="bubble-scale-val" class="text-[10px] text-cyan-400 font-mono">1.0x</span>
+      </div>
+    </div>
+
+    <div class="flex items-center justify-between pt-1 border-t border-slate-800">
+      <span class="text-[10px] text-slate-400 font-semibold">COR DO CHROMA / FUNDO:</span>
+      <input type="color" id="screen-bg-color" value="#19f105" class="w-6 h-6 rounded-lg cursor-pointer border border-slate-600 bg-transparent p-0">
+    </div>
+  </footer>
+
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,175 @@
+:root {
+  --cor-fundo-tela: #19f105;
+  --cor-pelagem: #3b2216;
+  --cor-pele: #b6774b;
+  --cor-orelha-interna: #a46348;
+  --cor-olhos: #fdfdfd;
+  --cor-pupila: #0a0a0a;
+  --cor-oculos-armacao: #ffffff;
+  --cor-lente-esquerda: #df071a;
+  --cor-lente-direita: #0548e6;
+  --cor-fundo-balao: #ffffff;
+  --cor-texto-balao: #111827;
+  --cor-borda-balao: #7c7a7a;
+  --cor-destaque-palavra: #fef08a;
+  --cor-texto-destaque: #0f172a;
+}
+
+body, html {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  user-select: none;
+  background: var(--cor-fundo-tela);
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+#canvas-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: transparent;
+  overflow: hidden;
+}
+
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  background: #1e293b;
+  border-radius: 9999px;
+  outline: none;
+}
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #06b6d4;
+  cursor: pointer;
+  box-shadow: 0 0 6px rgba(6, 182, 212, 0.7);
+}
+input[type="range"]::-moz-range-thumb {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #06b6d4;
+  cursor: pointer;
+  border: none;
+  box-shadow: 0 0 6px rgba(6, 182, 212, 0.7);
+}
+
+/* Balão de Fala Retangular Cartoon Original 100% CSS */
+#speech-bubble {
+  position: absolute;
+  top: 18%;
+  left: 52%;
+  width: 340px;
+  height: 160px;
+  background-color: var(--cor-fundo-balao);
+  border: 5px solid var(--cor-borda-balao);
+  border-radius: 28px;
+  z-index: 25;
+  pointer-events: auto;
+  cursor: grab;
+  user-select: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  filter: drop-shadow(0 10px 20px rgba(0, 0, 0, 0.25));
+}
+
+#speech-bubble:active {
+  cursor: grabbing;
+}
+
+#speech-bubble::before,
+#speech-bubble::after {
+  content: '';
+  position: absolute;
+  width: 0;
+  height: 0;
+  border-style: solid;
+  border-color: transparent;
+  border-top-color: var(--cor-borda-balao);
+  transform: skewX(-20deg);
+}
+
+#speech-bubble::before {
+  bottom: -40px;
+  border-width: 40px 35px 0 0;
+  left: 35px;
+  z-index: 1;
+}
+
+#speech-bubble::after {
+  bottom: -32px;
+  left: 39px;
+  border-width: 33px 28px 0 0;
+  border-top-color: var(--cor-fundo-balao);
+  z-index: 2;
+}
+
+#speech-text-area {
+  position: relative;
+  z-index: 3;
+  width: 100%;
+  height: 100%;
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  pointer-events: none;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+#speech-text {
+  color: var(--cor-texto-balao);
+  font-size: 22px;
+  font-weight: 800;
+  line-height: 1.25;
+  text-wrap: balance;
+  word-break: normal;
+  overflow-wrap: break-word;
+  display: -webkit-box;
+  line-clamp: 4;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  width: 100%;
+  max-width: 100%;
+  white-space: pre-line;
+}
+
+.karaoke-word {
+  display: inline-block;
+  padding: 1px 5px;
+  margin: 1px 1px;
+  border-radius: 6px;
+  background-color: transparent;
+  color: var(--cor-texto-balao);
+  transition: background-color 0.12s ease, transform 0.12s ease, color 0.12s ease;
+  transform-origin: center center;
+}
+
+.karaoke-word.karaoke-active {
+  background-color: var(--cor-destaque-palavra) !important;
+  color: var(--cor-texto-destaque) !important;
+  transform: scale(1.05);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+}
+
+textarea::-webkit-scrollbar {
+  width: 6px;
+}
+textarea::-webkit-scrollbar-thumb {
+  background: #334155;
+  border-radius: 6px;
+}
