@@ -92,7 +92,7 @@ export function exibirFraseAtual() {
   const frase = listaFrases[indiceFraseAtual] || "";
   renderizarFraseComPalavras(frase);
   captionCurrentLiveInput.value = frase;
-  captionStepCounter.textContent = `${indiceFraseAtual + 1} / ${listaFrases.length}`;
+  captionStepCounter.textContent = `${indiceFraseAtual + 1} / ${Math.max(1, listaFrases.length)}`;
 
   autoFitTextoNoBalao();
 
@@ -149,8 +149,23 @@ export function quebrarTextoEmBlocosDe3Linhas(textoCompleto) {
   return blocosFinais.length > 0 ? blocosFinais : ["..."];
 }
 
+// Atualização direta por linha: cada linha da textarea corresponde a um trecho editável
 export function atualizarListaFrases() {
-  listaFrases = quebrarTextoEmBlocosDe3Linhas(captionScriptInput.value);
+  const linhas = captionScriptInput.value
+    .split('\n')
+    .map(l => l.trim())
+    .filter(l => l.length > 0);
+
+  listaFrases = linhas.length > 0 ? linhas : ["..."];
+
+  // Sincroniza o texto alterado diretamente com a timeline gravada para o .VTT
+  if (timelineGravada.length > 0) {
+    timelineGravada.forEach((item, idx) => {
+      if (listaFrases[idx]) {
+        item.texto = listaFrases[idx];
+      }
+    });
+  }
 
   if (indiceFraseAtual >= listaFrases.length) {
     indiceFraseAtual = Math.max(0, listaFrases.length - 1);
@@ -209,13 +224,21 @@ export function reproduzirDestaquePeloTempo(tempoAtual) {
       indiceFraseAtual = fraseAtivaIdx;
       exibirFraseAtual();
     }
+if (palavrasElementos.length > 0 && blocoAtivo) {
+      const duracaoTotal = Math.max(0.1, blocoAtivo.fim - blocoAtivo.inicio);
+      const progressoFrase = Math.min(1, Math.max(0, (tempoAtual - blocoAtivo.inicio) / duracaoTotal));
 
-    if (palavrasElementos.length > 0 && blocoAtivo) {
-      const progressoFrase = (tempoAtual - blocoAtivo.inicio) / Math.max(0.1, (blocoAtivo.fim - blocoAtivo.inicio));
-      const pIdx = Math.min(
-        palavrasElementos.length - 1,
-        Math.floor(progressoFrase * palavrasElementos.length)
-      );
+      const totalChars = palavrasElementos.reduce((acc, el) => acc + el.textContent.length, 0);
+      let charsAlvo = progressoFrase * totalChars;
+      let pIdx = 0;
+
+      for (let i = 0; i < palavrasElementos.length; i++) {
+        charsAlvo -= palavrasElementos[i].textContent.length;
+        if (charsAlvo <= 0) {
+          pIdx = i;
+          break;
+        }
+      }
 
       if (indicePalavraAtual !== pIdx) {
         indicePalavraAtual = pIdx;
@@ -338,26 +361,27 @@ export async function transcreverTrechoPausado() {
           const tInicioRel = typeof chunk.timestamp[0] === 'number' ? chunk.timestamp[0] : 0;
           const tFimRel = typeof chunk.timestamp[1] === 'number' ? chunk.timestamp[1] : (tInicioRel + 1.5);
 
-          const novoIdx = listaFrases.length;
-          listaFrases.push(textoChunk);
-
+          const novoIdx = timelineGravada.length;
           timelineGravada.push({
             fraseIdx: novoIdx,
+            texto: textoChunk,
             inicio: tempoInicio + tInicioRel,
             fim: tempoInicio + tFimRel
           });
         }
       });
     } else if (resultado.text && resultado.text.trim().length > 0) {
-      const novoIdx = listaFrases.length;
-      listaFrases.push(resultado.text.trim());
+      const novoIdx = timelineGravada.length;
       timelineGravada.push({
         fraseIdx: novoIdx,
+        texto: resultado.text.trim(),
         inicio: tempoInicio,
         fim: tempoAtual
       });
     }
 
+    // Mantém a textarea com 1 frase por linha baseada nos trechos transcritos
+    listaFrases = timelineGravada.map(item => item.texto);
     captionScriptInput.value = listaFrases.join('\n');
     exibirFraseAtual();
     ultimoTempoProcessado = tempoAtual;
@@ -385,10 +409,14 @@ export function exportarArquivoVTT() {
     return;
   }
 
+  // Garante a leitura dos textos editados diretamente da textarea
+  atualizarListaFrases();
+
   let conteudoVTT = "WEBVTT\n\n";
-  timelineGravada.forEach((item) => {
+  timelineGravada.forEach((item, idx) => {
+    const textoFinal = listaFrases[idx] || item.texto;
     conteudoVTT += `${formatarTempoVTT(item.inicio)} --> ${formatarTempoVTT(item.fim)}\n`;
-    conteudoVTT += `${listaFrases[item.fraseIdx]}\n\n`;
+    conteudoVTT += `${textoFinal}\n\n`;
   });
 
   const blob = new Blob([conteudoVTT], { type: 'text/vtt;charset=utf-8;' });

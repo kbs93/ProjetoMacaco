@@ -149,20 +149,20 @@ input[type="range"]::-moz-range-thumb {
 }
 
 .karaoke-word {
-  display: inline-block;
-  padding: 1px 5px;
-  margin: 1px 1px;
+  display: inline;
+  padding: 2px 5px;
+  margin: 0;
   border-radius: 6px;
   background-color: transparent;
   color: var(--cor-texto-balao);
-  transition: background-color 0.12s ease, transform 0.12s ease, color 0.12s ease;
-  transform-origin: center center;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+  transition: background-color 0.1s ease, color 0.1s ease;
 }
 
 .karaoke-word.karaoke-active {
-  background-color: var(--cor-destaque-palavra) !important;
-  color: var(--cor-texto-destaque) !important;
-  transform: scale(1.05);
+  background-color: var(--cor-destaque-palavra);
+  color: var(--cor-texto-destaque);
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
 }
 

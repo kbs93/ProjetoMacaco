@@ -481,16 +481,14 @@ function animate() {
   const tempoAgora = clock.getElapsedTime();
   let volumeAtual = 0;
   let gravesAtuais = 0;
-
-  if (!audioElement.paused && audioElement.duration) {
-    reproduzirDestaquePeloTempo(audioElement.currentTime);
-  }
-
-  if (analyserNode && !audioElement.paused) {
+if (analyserNode && !audioElement.paused) {
     const taxaEfetiva = tempoBaseBoca / (audioElement.playbackRate || 1.0);
     const analise = analisarAudioEspectro();
     volumeAtual = analise.volume;
     gravesAtuais = analise.fGrave;
+
+    // A cor de fundo do texto agora recebe o volume exato da boca
+    reproduzirDestaquePeloTempo(audioElement.currentTime, volumeAtual);
 
     if (tempoAgora - ultimaTrocaBocaTempo >= taxaEfetiva) {
       let bocaEscolhida = 'repouso';
