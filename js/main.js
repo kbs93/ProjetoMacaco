@@ -13,12 +13,11 @@ import {
 
 import { 
   speechBubble, speechText, captionScriptInput, captionCurrentLiveInput, 
-  capPrevBtn, capNextBtn, capResetBtn, 
   listaFrases, indiceFraseAtual, autoFitTextoNoBalao, 
   renderizarFraseComPalavras, atualizarListaFrases, exibirFraseAtual, 
   avancarPalavraComSincronia, voltarPalavraComSincronia, 
   reproduzirDestaquePeloTempo, resetarDestaqueVisual, 
-  resetAcumuladoresAudio 
+  resetAcumuladoresAudio, voltarAoInicioRoteiro
 } from './subtitleManager.js';
 import { 
   isRecording, mediaRecorder, recordCanvas, recordCtx, 
@@ -163,12 +162,9 @@ playerStopBtn.addEventListener('click', () => {
     audioElement.currentTime = 0;
     atualizarEstadoPlayBtn(false);
     desenharBoca('repouso');
-    resetarDestaqueVisual();
     
-    // Volta para a primeira frase para poder marcar de novo
-    indiceFraseAtual = 0;
-    timelineGravada = [];
-    exibirFraseAtual();
+    // Volta para a primeira frase com segurança
+    voltarAoInicioRoteiro();
 
     if (isRecording && mediaRecorder && mediaRecorder.state !== 'inactive') {
       mediaRecorder.stop();
@@ -294,13 +290,6 @@ audioElement.addEventListener('ended', () => {
 
 
 
-  capNextBtn.addEventListener('click', avancarPalavraComSincronia);
-  capPrevBtn.addEventListener('click', voltarPalavraComSincronia);
-
-  capResetBtn.addEventListener('click', () => {
-    exibirFraseAtual();
-    resetarDestaqueVisual();
-  });
 
   window.addEventListener('keydown', (e) => {
     const estaDigitando = ['TEXTAREA', 'INPUT'].includes(document.activeElement.tagName);

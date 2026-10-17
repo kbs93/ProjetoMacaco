@@ -269,3 +269,26 @@ window.addEventListener('keydown', (e) => {
     sincronizarFraseAoVivo();
   }
 });
+// Adicionar no final de subtitleManager.js:
+
+export function voltarAoInicioRoteiro() {
+  indiceFraseAtual = 0;
+  indicePalavraAtual = -1;
+  modoGravandoTempo = false;
+  timelineGravada = [];
+
+  resetarDestaqueVisual();
+  exibirFraseAtual();
+
+  if (audioElement) {
+    audioElement.currentTime = 0;
+  }
+}
+
+const btnResetInicio = document.getElementById('reset-script-start-btn');
+if (btnResetInicio) {
+  btnResetInicio.addEventListener('click', (e) => {
+    e.preventDefault();
+    voltarAoInicioRoteiro();
+  });
+}

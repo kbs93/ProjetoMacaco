@@ -134,18 +134,13 @@ input[type="range"]::-moz-range-thumb {
   color: var(--cor-texto-balao);
   font-size: 22px;
   font-weight: 800;
-  line-height: 1.25;
+  line-height: 1.2;
   text-wrap: balance;
   word-break: normal;
   overflow-wrap: break-word;
-  display: -webkit-box;
-  line-clamp: 4;
-  -webkit-line-clamp: 4;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
   width: 100%;
   max-width: 100%;
-  white-space: pre-line;
+  white-space: normal;
 }
 
 .karaoke-word {
