@@ -164,3 +164,22 @@ textarea::-webkit-scrollbar-thumb {
   background: #334155;
   border-radius: 6px;
 }
+/* Balão transparente e sem rabo (sem !important) */
+html body #speech-bubble.balao-transparente {
+  border-color: transparent;
+  box-shadow: none;
+  filter: none;
+}
+
+html body #speech-bubble.balao-transparente::before,
+html body #speech-bubble.balao-transparente::after {
+  display: none;
+}
+
+/* Tamanho do botão do Pickr (sem !important) */
+html body .pickr button.pcr-button {
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  border: 1px solid #475569;
+}

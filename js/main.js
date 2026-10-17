@@ -306,7 +306,7 @@ audioElement.addEventListener('ended', () => {
   const capFontSize = document.getElementById('cap-font-size');
   const capFontSizeVal = document.getElementById('cap-font-size-val');
   const capTextColor = document.getElementById('cap-text-color');
-  const capBgColor = document.getElementById('cap-bg-color');
+ 
   const capHighlightColor = document.getElementById('cap-highlight-color');
   const screenBgColor = document.getElementById('screen-bg-color');
   const capBoldBtn = document.getElementById('cap-bold-btn');
@@ -331,9 +331,7 @@ audioElement.addEventListener('ended', () => {
     speechText.style.color = e.target.value;
   });
 
-  capBgColor.addEventListener('input', (e) => {
-    document.documentElement.style.setProperty('--cor-fundo-balao', e.target.value);
-  });
+
 
   capHighlightColor.addEventListener('input', (e) => {
     document.documentElement.style.setProperty('--cor-destaque-palavra', e.target.value);
@@ -540,3 +538,42 @@ window.onload = function () {
   atualizarListaFrases();
   animate();
 };
+// Inicializa o seletor visual idêntico ao da imagem com suporte a transparência
+const pickrBalao = Pickr.create({
+  el: '#picker-balao',
+  theme: 'monolith',
+  default: '#ffffff',
+  swatches: [
+    '#ffffff', '#000000', '#fde047', '#38bdf8', '#ef4444', '#22c55e'
+  ],
+  components: {
+    preview: true,
+    opacity: true, // Barra de transparência lateral
+    hue: true,     // Barra colorida de espectro
+
+    interaction: {
+      hex: true,
+      rgba: true,
+      input: true,
+      clear: false,
+      save: true
+    }
+  }
+});
+
+// Atualiza o balão em tempo real conforme você arrasta a cor ou a transparência
+pickrBalao.on('change', (color) => {
+  const corRgba = color.toRGBA().toString(0); // gera rgba(r, g, b, a)
+  document.documentElement.style.setProperty('--cor-fundo-balao', corRgba);
+
+  // Se a opacidade for zero, oculta o bico do balão para não sobrar triângulo na tela
+  const alpha = color.toRGBA()[3];
+  const balao = document.getElementById('speech-bubble');
+  if (balao) {
+    if (alpha === 0) {
+      balao.classList.add('balao-transparente');
+    } else {
+      balao.classList.remove('balao-transparente');
+    }
+  }
+});
