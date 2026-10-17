@@ -149,21 +149,17 @@ input[type="range"]::-moz-range-thumb {
 }
 
 .karaoke-word {
-  display: inline;
-  padding: 2px 5px;
-  margin: 0;
+  display: inline-block;
+  padding: 2px 6px;
   border-radius: 6px;
-  background-color: transparent;
-  color: var(--cor-texto-balao);
-  box-decoration-break: clone;
-  -webkit-box-decoration-break: clone;
   transition: background-color 0.1s ease, color 0.1s ease;
 }
 
 .karaoke-word.karaoke-active {
-  background-color: var(--cor-destaque-palavra);
-  color: var(--cor-texto-destaque);
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+  /* Lê a variável configurada pelo input DESTAQUE ou usa amarelo como padrão */
+  background-color: var(--karaoke-highlight-bg, #ffd84d);
+  color: var(--karaoke-highlight-color, #111827);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
 
 textarea::-webkit-scrollbar {

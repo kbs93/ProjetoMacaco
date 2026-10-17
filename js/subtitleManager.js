@@ -10,7 +10,7 @@ export const capPrevBtn = document.getElementById('cap-prev-btn');
 export const capNextBtn = document.getElementById('cap-next-btn');
 export const capResetBtn = document.getElementById('cap-reset-btn');
 export const captionStepCounter = document.getElementById('caption-step-counter');
-export const capSplitSentencesBtn = document.getElementById('cap-split-sentences-btn');
+export const syncPhraseBtn = document.getElementById('sync-phrase-btn');
 
 export let listaFrases = [];
 export let indiceFraseAtual = 0;
@@ -21,16 +21,11 @@ export let timelineGravada = [];
 export let modoGravandoTempo = false;
 export let ultimoTempoProcessado = 0;
 
-let transcricaoDoAudio = [];
-export let reconhecedorVoz = null;
-let modeloWhisperFront = null;
-let audioDecodificadoGlobal = null;
-
 export function resetAcumuladoresAudio() {
   ultimoTempoProcessado = 0;
-  audioDecodificadoGlobal = null;
   timelineGravada = [];
   listaFrases = [];
+  modoGravandoTempo = false;
 }
 
 export function renderizarFraseComPalavras(texto) {
@@ -91,66 +86,25 @@ export function autoFitTextoNoBalao() {
 export function exibirFraseAtual() {
   const frase = listaFrases[indiceFraseAtual] || "";
   renderizarFraseComPalavras(frase);
-  captionCurrentLiveInput.value = frase;
-  captionStepCounter.textContent = `${indiceFraseAtual + 1} / ${Math.max(1, listaFrases.length)}`;
+  if (captionCurrentLiveInput) {
+    captionCurrentLiveInput.value = frase;
+  }
+  if (captionStepCounter) {
+    captionStepCounter.textContent = `${indiceFraseAtual + 1} / ${Math.max(1, listaFrases.length)}`;
+  }
 
   autoFitTextoNoBalao();
 
-  capPrevBtn.classList.toggle('opacity-50', indiceFraseAtual === 0 && indicePalavraAtual <= 0);
-  capPrevBtn.classList.toggle('cursor-not-allowed', indiceFraseAtual === 0 && indicePalavraAtual <= 0);
-}
-
-function formatarEm4Linhas(texto) {
-  const palavras = texto.trim().split(/\s+/).filter(p => p.length > 0);
-  if (palavras.length === 0) return "";
-  
-  const totalLinhas = 4;
-  const totalPalavras = palavras.length;
-  const basePorLinha = Math.floor(totalPalavras / totalLinhas);
-  const resto = totalPalavras % totalLinhas;
-  
-  const linhas = [];
-  let indiceInicio = 0;
-
-  for (let i = 0; i < totalLinhas; i++) {
-    const qtdPalavrasLinha = basePorLinha + (i < resto ? 1 : 0);
-    if (qtdPalavrasLinha > 0 && indiceInicio < totalPalavras) {
-      linhas.push(palavras.slice(indiceInicio, indiceInicio + qtdPalavrasLinha).join(' '));
-      indiceInicio += qtdPalavrasLinha;
-    }
+  if (capPrevBtn) {
+    capPrevBtn.classList.toggle('opacity-50', indiceFraseAtual === 0 && indicePalavraAtual <= 0);
+    capPrevBtn.classList.toggle('cursor-not-allowed', indiceFraseAtual === 0 && indicePalavraAtual <= 0);
   }
-
-  return linhas.join('\n');
 }
 
-export function quebrarTextoEmBlocosDe3Linhas(textoCompleto) {
-  const frasesBrutas = textoCompleto
-    .replace(/([.?!])\s+/g, "\$1\n")
-    .split('\n')
-    .map(f => f.trim())
-    .filter(f => f.length > 0);
-
-  const blocosFinais = [];
-  const LIMITE_PALAVRAS_BLOCO = 20;
-
-  frasesBrutas.forEach(frase => {
-    const palavras = frase.split(/\s+/).filter(p => p.length > 0);
-
-    if (palavras.length <= LIMITE_PALAVRAS_BLOCO) {
-      blocosFinais.push(formatarEm4Linhas(frase));
-    } else {
-      for (let i = 0; i < palavras.length; i += LIMITE_PALAVRAS_BLOCO) {
-        const pedaco = palavras.slice(i, i + LIMITE_PALAVRAS_BLOCO).join(' ');
-        blocosFinais.push(formatarEm4Linhas(pedaco));
-      }
-    }
-  });
-
-  return blocosFinais.length > 0 ? blocosFinais : ["..."];
-}
-
-// Atualização direta por linha: cada linha da textarea corresponde a um trecho editável
+// Atualização direta por linha: cada linha da textarea corresponde a uma frase
 export function atualizarListaFrases() {
+  if (!captionScriptInput) return;
+
   const linhas = captionScriptInput.value
     .split('\n')
     .map(l => l.trim())
@@ -158,10 +112,9 @@ export function atualizarListaFrases() {
 
   listaFrases = linhas.length > 0 ? linhas : ["..."];
 
-  // Sincroniza o texto alterado diretamente com a timeline gravada para o .VTT
   if (timelineGravada.length > 0) {
     timelineGravada.forEach((item, idx) => {
-      if (listaFrases[idx]) {
+      if (listaFrases[idx] !== undefined) {
         item.texto = listaFrases[idx];
       }
     });
@@ -175,6 +128,12 @@ export function atualizarListaFrases() {
   }
 
   exibirFraseAtual();
+}
+
+if (captionScriptInput) {
+  captionScriptInput.addEventListener('input', () => {
+    atualizarListaFrases();
+  });
 }
 
 export function avancarPalavraComSincronia() {
@@ -205,17 +164,22 @@ export function voltarPalavraComSincronia() {
   }
 }
 
+// Reprodução automática da timeline gravada
 export function reproduzirDestaquePeloTempo(tempoAtual) {
+  // Não interfere enquanto você estiver no processo manual de marcar as frases
+  if (modoGravandoTempo) return;
   if (timelineGravada.length === 0) return;
 
   let fraseAtivaIdx = -1;
   let blocoAtivo = null;
 
   for (let i = 0; i < timelineGravada.length; i++) {
-    if (tempoAtual >= timelineGravada[i].inicio && tempoAtual <= timelineGravada[i].fim) {
-      fraseAtivaIdx = timelineGravada[i].fraseIdx;
-      blocoAtivo = timelineGravada[i];
-      break;
+    if (timelineGravada[i] && typeof timelineGravada[i].inicio === 'number') {
+      if (tempoAtual >= timelineGravada[i].inicio && tempoAtual <= timelineGravada[i].fim) {
+        fraseAtivaIdx = timelineGravada[i].fraseIdx;
+        blocoAtivo = timelineGravada[i];
+        break;
+      }
     }
   }
 
@@ -224,7 +188,8 @@ export function reproduzirDestaquePeloTempo(tempoAtual) {
       indiceFraseAtual = fraseAtivaIdx;
       exibirFraseAtual();
     }
-if (palavrasElementos.length > 0 && blocoAtivo) {
+
+    if (palavrasElementos.length > 0 && blocoAtivo) {
       const duracaoTotal = Math.max(0.1, blocoAtivo.fim - blocoAtivo.inicio);
       const progressoFrase = Math.min(1, Math.max(0, (tempoAtual - blocoAtivo.inicio) / duracaoTotal));
 
@@ -250,184 +215,57 @@ if (palavrasElementos.length > 0 && blocoAtivo) {
   }
 }
 
-export function iniciarReconhecimentoDoAudio() {
-  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if (!SpeechRecognition) {
-    console.warn("Reconhecimento de fala nativo não suportado neste navegador.");
-    return;
+// Função principal de sincronia: marca a frase atual e avança para a próxima
+export function sincronizarFraseAoVivo() {
+  if (listaFrases.length === 0 || (listaFrases.length === 1 && listaFrases[0] === "...")) {
+    atualizarListaFrases();
   }
 
-  if (reconhecedorVoz) {
-    try { reconhecedorVoz.abort(); } catch (e) {}
-  }
+  if (listaFrases.length === 0) return;
 
-  transcricaoDoAudio = [];
-  reconhecedorVoz = new SpeechRecognition();
-  reconhecedorVoz.continuous = true;
-  reconhecedorVoz.interimResults = false;
-  reconhecedorVoz.lang = 'pt-BR';
-
-  reconhecedorVoz.onresult = (evento) => {
-    for (let i = evento.resultIndex; i < evento.results.length; ++i) {
-      if (evento.results[i].isFinal) {
-        const textoFalado = evento.results[i][0].transcript.trim();
-        const tempoFim = audioElement.currentTime || 0;
-        const tempoInicio = Math.max(0, tempoFim - 2.5);
-
-        transcricaoDoAudio.push({
-          texto: textoFalado,
-          inicio: tempoInicio,
-          fim: tempoFim
-        });
-
-        speechText.textContent = textoFalado;
-        captionCurrentLiveInput.value = textoFalado;
-        autoFitTextoNoBalao();
-      }
-    }
-  };
-
-  try {
-    reconhecedorVoz.start();
-  } catch (e) {
-    console.log("Reconhecimento já iniciado.");
-  }
-}
-
-export async function transcreverTrechoPausado() {
-  const audioInput = document.getElementById('audio-input');
-  const ficheiroAudio = audioInput.files && audioInput.files[0];
-
-  if (!ficheiroAudio) {
-    alert("Carregue primeiro o áudio pelo botão 'Carregar Áudio'!");
-    return;
-  }
+  // Ativa a flag para a animação não atrapalhar a sua marcação manual
+  modoGravandoTempo = true;
 
   const tempoAtual = audioElement.currentTime || 0;
-  const tempoInicio = ultimoTempoProcessado;
-  const duracaoFatia = tempoAtual - tempoInicio;
 
-  if (duracaoFatia <= 0.3) {
-    alert("Dê Play no áudio e pause pelo menos 1 ou 2 segundos à frente para transcrever o trecho!");
-    return;
+  // 1. Fecha o tempo final da frase anterior
+  if (indiceFraseAtual > 0 && timelineGravada[indiceFraseAtual - 1]) {
+    timelineGravada[indiceFraseAtual - 1].fim = tempoAtual;
   }
 
-  const btnChunk = document.getElementById('transcribe-chunk-btn');
-  const textoOriginal = btnChunk.innerHTML;
-  btnChunk.innerHTML = `<span>⏳</span> Transcrevendo (${tempoInicio.toFixed(1)}s a ${tempoAtual.toFixed(1)}s)...`;
-  btnChunk.disabled = true;
+  // 2. Grava o início da frase atual exibida no balão
+  timelineGravada[indiceFraseAtual] = {
+    fraseIdx: indiceFraseAtual,
+    texto: listaFrases[indiceFraseAtual],
+    inicio: tempoAtual,
+    fim: tempoAtual + 2.5
+  };
 
-  try {
-    if (!modeloWhisperFront) {
-      btnChunk.innerHTML = "<span>⏳</span> Carregando Whisper IA...";
-      modeloWhisperFront = await window.pipelineTransformers(
-        'automatic-speech-recognition',
-        'Xenova/whisper-tiny',
-        { quantized: true }
-      );
-    }
-
-    if (!audioDecodificadoGlobal) {
-      btnChunk.innerHTML = "<span>⏳</span> Preparando buffer...";
-      const arrayBuffer = await ficheiroAudio.arrayBuffer();
-      const audioCtxTemp = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 16000 });
-      const decoded = await audioCtxTemp.decodeAudioData(arrayBuffer);
-      audioDecodificadoGlobal = decoded.getChannelData(0);
-    }
-
-    const startSample = Math.floor(tempoInicio * 16000);
-    const endSample = Math.min(Math.floor(tempoAtual * 16000), audioDecodificadoGlobal.length);
-
-    if (startSample >= endSample) {
-      alert("O cursor de áudio já atingiu o fim do arquivo.");
-      return;
-    }
-
-    const fatiaPequena = audioDecodificadoGlobal.slice(startSample, endSample);
-
-    btnChunk.innerHTML = "<span>⏳</span> Processando fala...";
-
-    const resultado = await modeloWhisperFront(fatiaPequena, {
-      sampling_rate: 16000,
-      language: 'portuguese',
-      task: 'transcribe',
-      return_timestamps: true
-    });
-
-    if (resultado.chunks && resultado.chunks.length > 0) {
-      resultado.chunks.forEach((chunk) => {
-        const textoChunk = (chunk.text || '').trim();
-        if (textoChunk.length > 0) {
-          const tInicioRel = typeof chunk.timestamp[0] === 'number' ? chunk.timestamp[0] : 0;
-          const tFimRel = typeof chunk.timestamp[1] === 'number' ? chunk.timestamp[1] : (tInicioRel + 1.5);
-
-          const novoIdx = timelineGravada.length;
-          timelineGravada.push({
-            fraseIdx: novoIdx,
-            texto: textoChunk,
-            inicio: tempoInicio + tInicioRel,
-            fim: tempoInicio + tFimRel
-          });
-        }
-      });
-    } else if (resultado.text && resultado.text.trim().length > 0) {
-      const novoIdx = timelineGravada.length;
-      timelineGravada.push({
-        fraseIdx: novoIdx,
-        texto: resultado.text.trim(),
-        inicio: tempoInicio,
-        fim: tempoAtual
-      });
-    }
-
-    // Mantém a textarea com 1 frase por linha baseada nos trechos transcritos
-    listaFrases = timelineGravada.map(item => item.texto);
-    captionScriptInput.value = listaFrases.join('\n');
+  // 3. Se houver próxima frase, avança imediatamente no balão
+  if (indiceFraseAtual < listaFrases.length - 1) {
+    indiceFraseAtual++;
     exibirFraseAtual();
-    ultimoTempoProcessado = tempoAtual;
-
-  } catch (err) {
-    console.error("Erro ao transcrever trecho:", err);
-    alert(`Erro na fatia: ${err.message || err}`);
-  } finally {
-    btnChunk.innerHTML = textoOriginal;
-    btnChunk.disabled = false;
+  } else {
+    // Última frase alcançada
+    timelineGravada[indiceFraseAtual].fim = audioElement.duration || (tempoAtual + 2.5);
+    modoGravandoTempo = false;
   }
 }
 
-function formatarTempoVTT(segundos) {
-  const h = Math.floor(segundos / 3600);
-  const m = Math.floor((segundos % 3600) / 60);
-  const s = Math.floor(segundos % 60);
-  const ms = Math.floor((segundos % 1) * 1000);
-  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}.${String(ms).padStart(3, '0')}`;
-}
-
-export function exportarArquivoVTT() {
-  if (timelineGravada.length === 0) {
-    alert("Nenhum trecho de legenda foi transcrito ainda!");
-    return;
-  }
-
-  // Garante a leitura dos textos editados diretamente da textarea
-  atualizarListaFrases();
-
-  let conteudoVTT = "WEBVTT\n\n";
-  timelineGravada.forEach((item, idx) => {
-    const textoFinal = listaFrases[idx] || item.texto;
-    conteudoVTT += `${formatarTempoVTT(item.inicio)} --> ${formatarTempoVTT(item.fim)}\n`;
-    conteudoVTT += `${textoFinal}\n\n`;
+// Ouvinte de clique no botão azul da interface
+if (syncPhraseBtn) {
+  syncPhraseBtn.addEventListener('click', (e) => {
+    e.preventDefault();
+    sincronizarFraseAoVivo();
   });
-
-  const blob = new Blob([conteudoVTT], { type: 'text/vtt;charset=utf-8;' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `legenda_audio_${Date.now()}.vtt`;
-  document.body.appendChild(a);
-  a.click();
-  setTimeout(() => {
-    document.body.removeChild(a);
-    window.URL.revokeObjectURL(url);
-  }, 100);
 }
+
+// Ouvinte da Barra de Espaço
+window.addEventListener('keydown', (e) => {
+  if (['TEXTAREA', 'INPUT'].includes(e.target.tagName)) return;
+
+  if (e.code === 'Space') {
+    e.preventDefault();
+    sincronizarFraseAoVivo();
+  }
+});

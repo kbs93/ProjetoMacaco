@@ -13,15 +13,13 @@ import {
 
 import { 
   speechBubble, speechText, captionScriptInput, captionCurrentLiveInput, 
-  capPrevBtn, capNextBtn, capResetBtn, capSplitSentencesBtn, 
+  capPrevBtn, capNextBtn, capResetBtn, 
   listaFrases, indiceFraseAtual, autoFitTextoNoBalao, 
   renderizarFraseComPalavras, atualizarListaFrases, exibirFraseAtual, 
   avancarPalavraComSincronia, voltarPalavraComSincronia, 
   reproduzirDestaquePeloTempo, resetarDestaqueVisual, 
-  iniciarReconhecimentoDoAudio, transcreverTrechoPausado, 
-  exportarArquivoVTT, resetAcumuladoresAudio, reconhecedorVoz 
+  resetAcumuladoresAudio 
 } from './subtitleManager.js';
-
 import { 
   isRecording, mediaRecorder, recordCanvas, recordCtx, 
   renderizarBalaoNoGravador, toggleRecording 
@@ -62,18 +60,14 @@ function togglePlayPauseGlobal() {
     }
     aplicarTaxaAudio();
 
-    audioElement.play().then(() => {
+ audioElement.play().then(() => {
       atualizarEstadoPlayBtn(true);
-      iniciarReconhecimentoDoAudio();
     }).catch(err => {
       console.error("Erro ao tocar áudio:", err);
     });
   } else {
     audioElement.pause();
     atualizarEstadoPlayBtn(false);
-    if (reconhecedorVoz) {
-      try { reconhecedorVoz.stop(); } catch (e) {}
-    }
   }
 }
 
@@ -164,15 +158,18 @@ function setupEventListeners() {
 
   playerMasterPlayBtn.addEventListener('click', togglePlayPauseGlobal);
 
-  playerStopBtn.addEventListener('click', () => {
+playerStopBtn.addEventListener('click', () => {
     audioElement.pause();
     audioElement.currentTime = 0;
     atualizarEstadoPlayBtn(false);
     desenharBoca('repouso');
     resetarDestaqueVisual();
-    if (reconhecedorVoz) {
-      try { reconhecedorVoz.stop(); } catch (e) {}
-    }
+    
+    // Volta para a primeira frase para poder marcar de novo
+    indiceFraseAtual = 0;
+    timelineGravada = [];
+    exibirFraseAtual();
+
     if (isRecording && mediaRecorder && mediaRecorder.state !== 'inactive') {
       mediaRecorder.stop();
     }
@@ -210,9 +207,8 @@ function setupEventListeners() {
     aplicarTaxaAudio();
   });
 
-  audioElement.addEventListener('play', () => {
+audioElement.addEventListener('play', () => {
     aplicarTaxaAudio();
-    iniciarReconhecimentoDoAudio();
   });
 
   const loadBtn = document.getElementById('load-file-btn');
@@ -230,23 +226,19 @@ function setupEventListeners() {
       if (audioCtx && audioCtx.state === 'suspended') {
         audioCtx.resume();
       }
-      audioElement.play().then(() => {
+ audioElement.play().then(() => {
         aplicarTaxaAudio();
         atualizarEstadoPlayBtn(true);
-        iniciarReconhecimentoDoAudio();
       }).catch(() => {
         aplicarTaxaAudio();
       });
     }
   });
 
-  audioElement.addEventListener('ended', () => {
+audioElement.addEventListener('ended', () => {
     atualizarEstadoPlayBtn(false);
     desenharBoca('repouso');
     resetarDestaqueVisual();
-    if (reconhecedorVoz) {
-      try { reconhecedorVoz.stop(); } catch (e) {}
-    }
     if (isRecording && mediaRecorder && mediaRecorder.state !== 'inactive') {
       mediaRecorder.stop();
     }
@@ -285,8 +277,8 @@ function setupEventListeners() {
     toggleBubbleBtn.textContent = isHidden ? 'Ocultar Balão' : 'Mostrar Balão';
   });
 
-  document.getElementById('export-vtt-btn').addEventListener('click', exportarArquivoVTT);
-  document.getElementById('transcribe-chunk-btn').addEventListener('click', transcreverTrechoPausado);
+ 
+  
 
   captionCurrentLiveInput.addEventListener('input', (e) => {
     const novoTexto = e.target.value;
@@ -300,17 +292,7 @@ function setupEventListeners() {
     atualizarListaFrases();
   });
 
-  capSplitSentencesBtn.addEventListener('click', () => {
-    const textoAtual = captionScriptInput.value;
-    const frasesDivididas = textoAtual
-      .replace(/([.?!])\s*(?=[A-Za-zÀ-ÖØ-öø-ÿ0-9])/g, "\$1\n")
-      .split('\n')
-      .map(f => f.trim())
-      .filter(f => f.length > 0);
 
-    captionScriptInput.value = frasesDivididas.join('\n');
-    atualizarListaFrases();
-  });
 
   capNextBtn.addEventListener('click', avancarPalavraComSincronia);
   capPrevBtn.addEventListener('click', voltarPalavraComSincronia);
