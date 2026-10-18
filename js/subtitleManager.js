@@ -102,15 +102,48 @@ export function exibirFraseAtual() {
 }
 
 // Atualização direta por linha: cada linha da textarea corresponde a uma frase
+// Atualização com quebra automática de até 3 linhas por balão
 export function atualizarListaFrases() {
   if (!captionScriptInput) return;
 
-  const linhas = captionScriptInput.value
+  const linhasBrutas = captionScriptInput.value
     .split('\n')
     .map(l => l.trim())
     .filter(l => l.length > 0);
 
-  listaFrases = linhas.length > 0 ? linhas : ["..."];
+  const MAX_PALAVRAS_POR_BALAO = 11; // Quantidade ideal para caber em até 3 linhas no balão
+  const frasesProcessadas = [];
+
+  linhasBrutas.forEach(linha => {
+    const palavras = linha.split(/\s+/).filter(p => p.length > 0);
+    
+    // Se a linha for curta, entra inteira
+    if (palavras.length <= MAX_PALAVRAS_POR_BALAO) {
+      frasesProcessadas.push(linha);
+      return;
+    }
+
+    // Se for longa, fatia preservando o tamanho de até 3 linhas
+    let blocoAtual = [];
+    palavras.forEach((palavra) => {
+      blocoAtual.push(palavra);
+      
+      const temPontuacaoForte = /[.?!]$/.test(palavra);
+      const atingiuLimite = blocoAtual.length >= MAX_PALAVRAS_POR_BALAO;
+
+      // Quebra se atingir o tamanho máximo ou se tiver pontuação com tamanho razoável
+      if (atingiuLimite || (temPontuacaoForte && blocoAtual.length >= 6)) {
+        frasesProcessadas.push(blocoAtual.join(' '));
+        blocoAtual = [];
+      }
+    });
+
+    if (blocoAtual.length > 0) {
+      frasesProcessadas.push(blocoAtual.join(' '));
+    }
+  });
+
+  listaFrases = frasesProcessadas.length > 0 ? frasesProcessadas : ["..."];
 
   if (timelineGravada.length > 0) {
     timelineGravada.forEach((item, idx) => {

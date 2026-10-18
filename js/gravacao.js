@@ -122,13 +122,38 @@ export function toggleRecording(onTogglePlayPause) {
     audioDestNode.stream.getAudioTracks().forEach(track => combinedStream.addTrack(track));
   }
 
-  let mimeType = 'video/webm;codecs=vp9,opus';
-  if (!MediaRecorder.isTypeSupported(mimeType)) {
-    mimeType = 'video/webm';
-    if (!MediaRecorder.isTypeSupported(mimeType)) {
-      mimeType = 'video/mp4';
+  /* ========================================================
+     REMOVA ESTE BLOCO ANTIGO DO SEU CÓDIGO:
+     --------------------------------------------------------
+     let mimeType = 'video/webm;codecs=vp9,opus';
+     if (!MediaRecorder.isTypeSupported(mimeType)) {
+       mimeType = 'video/webm';
+       if (!MediaRecorder.isTypeSupported(mimeType)) {
+         mimeType = 'video/mp4';
+       }
+     }
+     ======================================================== */
+
+  // >>> COLE ESTE BLOCO NO LUGAR:
+  const mimeTypesPossiveis = [
+    'video/mp4;codecs="avc1.42E01E, mp4a.40.2"',
+    'video/mp4',
+    'video/webm;codecs=vp9,opus',
+    'video/webm'
+  ];
+
+  let mimeType = '';
+  for (const tipo of mimeTypesPossiveis) {
+    if (MediaRecorder.isTypeSupported(tipo)) {
+      mimeType = tipo;
+      break;
     }
   }
+
+  if (!mimeType) {
+    mimeType = 'video/webm';
+  }
+  // <<< FIM DO BLOCO NOVO
 
   recordedChunks = [];
   try {
@@ -147,16 +172,45 @@ export function toggleRecording(onTogglePlayPause) {
     }
   };
 
+  /* ========================================================
+     REMOVA ESTE BLOCO ANTIGO NA FUNÇÃO onstop:
+     --------------------------------------------------------
+     mediaRecorder.onstop = () => {
+       isRecording = false;
+       recordBtn.innerHTML = `<span class="inline-block w-2.5 h-2.5 rounded-full bg-white animate-pulse"></span> Gravar Vídeo`;
+       recordBtn.classList.remove('bg-emerald-600', 'hover:bg-emerald-500');
+       recordBtn.classList.add('bg-red-600', 'hover:bg-red-500');
+
+       const blob = new Blob(recordedChunks, { type: mediaRecorder.mimeType || 'video/webm' });
+       const url = URL.createObjectURL(blob);
+       const a = document.createElement('a');
+       const ext = (mediaRecorder.mimeType && mediaRecorder.mimeType.includes('mp4')) ? 'mp4' : 'webm';
+       a.href = url;
+       a.download = `apresentador_macaco_${Date.now()}.${ext}`;
+       document.body.appendChild(a);
+       a.click();
+       setTimeout(() => {
+         document.body.removeChild(a);
+         window.URL.revokeObjectURL(url);
+       }, 100);
+     };
+     ======================================================== */
+
+  // >>> COLE ESTE BLOCO NO LUGAR DO onstop:
   mediaRecorder.onstop = () => {
     isRecording = false;
     recordBtn.innerHTML = `<span class="inline-block w-2.5 h-2.5 rounded-full bg-white animate-pulse"></span> Gravar Vídeo`;
     recordBtn.classList.remove('bg-emerald-600', 'hover:bg-emerald-500');
     recordBtn.classList.add('bg-red-600', 'hover:bg-red-500');
 
-    const blob = new Blob(recordedChunks, { type: mediaRecorder.mimeType || 'video/webm' });
+    const finalMime = mediaRecorder.mimeType || mimeType;
+    const blob = new Blob(recordedChunks, { type: finalMime });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
-    const ext = (mediaRecorder.mimeType && mediaRecorder.mimeType.includes('mp4')) ? 'mp4' : 'webm';
+    
+    const isMp4 = finalMime.toLowerCase().includes('mp4');
+    const ext = isMp4 ? 'mp4' : 'webm';
+
     a.href = url;
     a.download = `apresentador_macaco_${Date.now()}.${ext}`;
     document.body.appendChild(a);
@@ -166,6 +220,7 @@ export function toggleRecording(onTogglePlayPause) {
       window.URL.revokeObjectURL(url);
     }, 100);
   };
+  // <<< FIM DO BLOCO NOVO
 
   mediaRecorder.start();
   isRecording = true;
@@ -178,3 +233,4 @@ export function toggleRecording(onTogglePlayPause) {
     if (onTogglePlayPause) onTogglePlayPause();
   }
 }
+
