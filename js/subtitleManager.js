@@ -61,28 +61,21 @@ export function resetarDestaqueVisual() {
 
 export function autoFitTextoNoBalao() {
   const capFontSize = document.getElementById('cap-font-size');
-  const maxFontSize = parseInt(capFontSize.value, 10) || 22;
-  let fontSizeAtual = maxFontSize;
+  const userFontSize = capFontSize ? (parseInt(capFontSize.value, 10) || 22) : 22;
+  let fontSizeAtual = userFontSize;
 
   speechText.style.fontSize = `${fontSizeAtual}px`;
 
-  const areaLargura = speechTextArea.clientWidth - 10;
-  const areaAltura = speechTextArea.clientHeight - 8;
+  // Altura limite de exatamente 2 linhas calculada pela altura de linha atual
+  const alturaLinha = fontSizeAtual * 1.25;
+  const alturaMaxDuasLinhas = (alturaLinha * 2) + 6;
 
-  if (areaLargura <= 0 || areaAltura <= 0) return;
-
-  while (
-    (speechText.offsetWidth > areaLargura || 
-     speechText.offsetHeight > areaAltura || 
-     speechText.scrollWidth > areaLargura || 
-     speechText.scrollHeight > areaAltura) && 
-    fontSizeAtual > 14
-  ) {
+  // Se a fonte escolhida fizer passar de 2 linhas no limite de largura do balão, reduz gradualmente
+  while (speechText.scrollHeight > alturaMaxDuasLinhas && fontSizeAtual > 14) {
     fontSizeAtual -= 0.5;
     speechText.style.fontSize = `${fontSizeAtual}px`;
   }
 }
-
 export function exibirFraseAtual() {
   const frase = listaFrases[indiceFraseAtual] || "";
   renderizarFraseComPalavras(frase);
@@ -111,7 +104,7 @@ export function atualizarListaFrases() {
     .map(l => l.trim())
     .filter(l => l.length > 0);
 
-  const MAX_PALAVRAS_POR_BALAO = 11; // Quantidade ideal para caber em até 3 linhas no balão
+  const MAX_PALAVRAS_POR_BALAO = 7; // Quantidade ideal para 1 a 2 linhas
   const frasesProcessadas = [];
 
   linhasBrutas.forEach(linha => {
