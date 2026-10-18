@@ -70,10 +70,10 @@ input[type="range"]::-moz-range-thumb {
   left: 52%;
   width: fit-content;
   min-width: 200px;
-  max-width: 580px;
+  max-width: 380px;
   height: auto;
   min-height: 70px;
-  padding: 12px 20px;
+  padding: 8px 20px;
   background-color: var(--cor-fundo-balao);
   border: 4px solid var(--cor-borda-balao);
   border-radius: 22px;
@@ -103,7 +103,7 @@ input[type="range"]::-moz-range-thumb {
 #speech-text {
   color: var(--cor-texto-balao);
   font-size: 22px;
-  font-weight: 800;
+
   line-height: 1.25;
   text-wrap: balance;
   word-break: normal;
@@ -149,7 +149,7 @@ display: block;
 
 
 
-
+ /* Lê a variável configurada pelo input DESTAQUE ou usa amarelo como padrão *
 .karaoke-word {
   display: inline-block;
   padding: 2px 6px;
@@ -158,7 +158,7 @@ display: block;
 }
 
 .karaoke-word.karaoke-active {
-  /* Lê a variável configurada pelo input DESTAQUE ou usa amarelo como padrão */
+ 
   background-color: var(--karaoke-highlight-bg, #ffd84d);
   color: var(--karaoke-highlight-color, #111827);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
@@ -171,7 +171,9 @@ textarea::-webkit-scrollbar-thumb {
   background: #334155;
   border-radius: 6px;
 }
-/* Balão transparente e sem rabo (sem !important) */
+
+
+
 html body #speech-bubble.balao-transparente {
   border-color: transparent;
   box-shadow: none;
@@ -183,10 +185,15 @@ html body #speech-bubble.balao-transparente::after {
   display: none;
 }
 
-/* Tamanho do botão do Pickr (sem !important) */
+
 html body .pickr button.pcr-button {
   width: 20px;
   height: 20px;
   border-radius: 4px;
   border: 1px solid #475569;
 }
+
+
+
+*/
+
