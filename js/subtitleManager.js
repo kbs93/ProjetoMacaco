@@ -58,24 +58,12 @@ export function resetarDestaqueVisual() {
   indicePalavraAtual = -1;
   palavrasElementos.forEach(el => el.classList.remove('karaoke-active'));
 }
-
 export function autoFitTextoNoBalao() {
   const capFontSize = document.getElementById('cap-font-size');
   const userFontSize = capFontSize ? (parseInt(capFontSize.value, 10) || 22) : 22;
-  let fontSizeAtual = userFontSize;
-
-  speechText.style.fontSize = `${fontSizeAtual}px`;
-
-  // Altura limite de exatamente 2 linhas calculada pela altura de linha atual
-  const alturaLinha = fontSizeAtual * 1.25;
-  const alturaMaxDuasLinhas = (alturaLinha * 2) + 6;
-
-  // Se a fonte escolhida fizer passar de 2 linhas no limite de largura do balão, reduz gradualmente
-  while (speechText.scrollHeight > alturaMaxDuasLinhas && fontSizeAtual > 14) {
-    fontSizeAtual -= 0.5;
-    speechText.style.fontSize = `${fontSizeAtual}px`;
-  }
+  speechText.style.fontSize = `${userFontSize}px`;
 }
+
 export function exibirFraseAtual() {
   const frase = listaFrases[indiceFraseAtual] || "";
   renderizarFraseComPalavras(frase);

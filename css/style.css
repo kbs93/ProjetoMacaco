@@ -1,6 +1,7 @@
 :root {
   --cor-fundo-tela: #19f105;
-  --cor-pelagem: #3b2216;
+  /* --cor-pelagem: #3b2216; VERDADEIRA*/
+  --cor-pelagem: #000000;
   --cor-pele: #b6774b;
   --cor-orelha-interna: #a46348;
   --cor-olhos: #fdfdfd;
@@ -75,7 +76,7 @@ input[type="range"]::-moz-range-thumb {
   min-height: 70px;
   padding: 8px 20px;
   background-color: var(--cor-fundo-balao);
-  border: 4px solid var(--cor-borda-balao);
+  border: 4px solid rgba(148, 146, 146, 0);/*borda do balao*/
   border-radius: 22px;
   z-index: 25;
   pointer-events: auto;
@@ -86,6 +87,17 @@ input[type="range"]::-moz-range-thumb {
   justify-content: center;
   box-sizing: border-box;
   filter: drop-shadow(0 10px 20px rgba(0, 0, 0, 0.25));
+}
+#speech-bubble::before,
+#speech-bubble::after {
+  content: '';
+  position: absolute;
+  width: 0;
+  height: 0;
+  border-style: solid;
+  border-color: transparent;
+  border-top-color: rgba(146, 140, 140, 0);/*borda do balao*/
+  transform: skewX(-20deg);
 }
 #speech-text-area {
   position: relative;
@@ -99,11 +111,9 @@ input[type="range"]::-moz-range-thumb {
   pointer-events: none;
   box-sizing: border-box;
 }
-
 #speech-text {
   color: var(--cor-texto-balao);
   font-size: 22px;
-
   line-height: 1.25;
   text-wrap: balance;
   word-break: normal;
@@ -111,26 +121,20 @@ input[type="range"]::-moz-range-thumb {
   width: auto;
   max-width: 100%;
   white-space: normal;
-display: block;
-  max-height: 2.5em;
-  overflow: hidden;
+  display: block;
+  max-height: none;
+  overflow: visible;
+
+  /* EFEITO DE CONTORNO (STROKE) CONTROLADO PELO BOTÃO DESTAQUE */
+  -webkit-text-stroke: 4px var(--cor-destaque-palavra);
+  paint-order: stroke fill;
 }
 
 #speech-bubble:active {
   cursor: grabbing;
 }
 
-#speech-bubble::before,
-#speech-bubble::after {
-  content: '';
-  position: absolute;
-  width: 0;
-  height: 0;
-  border-style: solid;
-  border-color: transparent;
-  border-top-color: var(--cor-borda-balao);
-  transform: skewX(-20deg);
-}
+
 
 #speech-bubble::before {
   bottom: -40px;
@@ -147,53 +151,4 @@ display: block;
   z-index: 2;
 }
 
-
-
- /* Lê a variável configurada pelo input DESTAQUE ou usa amarelo como padrão *
-.karaoke-word {
-  display: inline-block;
-  padding: 2px 6px;
-  border-radius: 6px;
-  transition: background-color 0.1s ease, color 0.1s ease;
-}
-
-.karaoke-word.karaoke-active {
- 
-  background-color: var(--karaoke-highlight-bg, #ffd84d);
-  color: var(--karaoke-highlight-color, #111827);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-}
-
-textarea::-webkit-scrollbar {
-  width: 6px;
-}
-textarea::-webkit-scrollbar-thumb {
-  background: #334155;
-  border-radius: 6px;
-}
-
-
-
-html body #speech-bubble.balao-transparente {
-  border-color: transparent;
-  box-shadow: none;
-  filter: none;
-}
-
-html body #speech-bubble.balao-transparente::before,
-html body #speech-bubble.balao-transparente::after {
-  display: none;
-}
-
-
-html body .pickr button.pcr-button {
-  width: 20px;
-  height: 20px;
-  border-radius: 4px;
-  border: 1px solid #475569;
-}
-
-
-
-*/
 

@@ -42,41 +42,49 @@ export function renderizarBalaoNoGravador() {
   const by = -baseH / 2;
 
   // CAMINHO ÚNICO: Balão + Cauda integrados (resolve a borda cinzenta contínua)
-  recordCtx.beginPath();
-  recordCtx.moveTo(bx + r, by);
-  // Borda superior
-  recordCtx.lineTo(bx + baseW - r, by);
-  recordCtx.quadraticCurveTo(bx + baseW, by, bx + baseW, by + r);
-  // Borda direita
-  recordCtx.lineTo(bx + baseW, by + baseH - r);
-  recordCtx.quadraticCurveTo(bx + baseW, by + baseH, bx + baseW - r, by + baseH);
-  // Borda inferior (lado direito até a cauda)
-  recordCtx.lineTo(bx + 80, by + baseH);
-  // Ponta da cauda
-  recordCtx.lineTo(bx + 26, by + baseH + 34);
-  recordCtx.lineTo(bx + 44, by + baseH);
-  // Borda inferior (lado esquerdo)
-  recordCtx.lineTo(bx + r, by + baseH);
-  recordCtx.quadraticCurveTo(bx, by + baseH, bx, by + baseH - r);
-  // Borda esquerda
-  recordCtx.lineTo(bx, by + r);
-  recordCtx.quadraticCurveTo(bx, by, bx + r, by);
-  recordCtx.closePath();
+// Verifica se o balão foi ocultado pelo botão ou pelo seletor de transparência
+  const balaoOculto = speechBubble.classList.contains('balao-oculto') || 
+                      speechBubble.classList.contains('balao-transparente') ||
+                      corFundoBalao === 'transparent';
 
-  // Preenchimento e contorno perfeitos sem costura
-  recordCtx.fillStyle = corFundoBalao;
-  recordCtx.fill();
-  recordCtx.lineWidth = borderWidth;
-  recordCtx.lineJoin = 'round';
-  recordCtx.strokeStyle = corBordaBalao;
-  recordCtx.stroke();
+  if (!balaoOculto) {
+    // CAMINHO ÚNICO: Balão + Cauda integrados (resolve a borda cinzenta contínua)
+    recordCtx.beginPath();
+    recordCtx.moveTo(bx + r, by);
+    // Borda superior
+    recordCtx.lineTo(bx + baseW - r, by);
+    recordCtx.quadraticCurveTo(bx + baseW, by, bx + baseW, by + r);
+    // Borda direita
+    recordCtx.lineTo(bx + baseW, by + baseH - r);
+    recordCtx.quadraticCurveTo(bx + baseW, by + baseH, bx + baseW - r, by + baseH);
+    // Borda inferior (lado direito até a cauda)
+    recordCtx.lineTo(bx + 80, by + baseH);
+    // Ponta da cauda
+    recordCtx.lineTo(bx + 26, by + baseH + 34);
+    recordCtx.lineTo(bx + 44, by + baseH);
+    // Borda inferior (lado esquerdo)
+    recordCtx.lineTo(bx + r, by + baseH);
+    recordCtx.quadraticCurveTo(bx, by + baseH, bx, by + baseH - r);
+    // Borda esquerda
+    recordCtx.lineTo(bx, by + r);
+    recordCtx.quadraticCurveTo(bx, by, bx + r, by);
+    recordCtx.closePath();
+
+    // Preenchimento e contorno perfeitos sem costura
+    recordCtx.fillStyle = corFundoBalao;
+    recordCtx.fill();
+    recordCtx.lineWidth = borderWidth;
+    recordCtx.lineJoin = 'round';
+    recordCtx.strokeStyle = corBordaBalao;
+    recordCtx.stroke();
+  }
 
   // RENDERIZAÇÃO DAS PALAVRAS
   if (palavrasElementos && palavrasElementos.length > 0) {
     const centroBalaoDOMX = rectBalao.left + rectBalao.width / 2;
     const centroBalaoDOMY = rectBalao.top + rectBalao.height / 2;
 
-    palavrasElementos.forEach(span => {
+palavrasElementos.forEach(span => {
       const rSpan = span.getBoundingClientRect();
       const localX = (rSpan.left - centroBalaoDOMX) / bubbleScaleInput;
       const localY = (rSpan.top - centroBalaoDOMY) / bubbleScaleInput;
@@ -86,24 +94,25 @@ export function renderizarBalaoNoGravador() {
       const computed = window.getComputedStyle(span);
       const isAtivo = span.classList.contains('karaoke-active');
       const fontSizePx = parseFloat(computed.fontSize);
-
-      if (isAtivo) {
-        recordCtx.save();
-        recordCtx.fillStyle = getCSSColor('--cor-destaque-palavra') || '#fef08a';
-        recordCtx.beginPath();
-        recordCtx.roundRect(localX, localY, localW, localH, 6);
-        recordCtx.fill();
-        recordCtx.restore();
-      }
+      const posX = localX + (localW / 2);
+      const posY = localY + (localH / 2);
 
       recordCtx.save();
-      // Força peso 'bold' / 800 caso o computed volte como normal
       const weight = (computed.fontWeight === 'normal' || parseInt(computed.fontWeight) < 600) ? 'bold' : computed.fontWeight;
       recordCtx.font = `${computed.fontStyle} ${weight} ${fontSizePx}px ${computed.fontFamily}`;
-      recordCtx.fillStyle = isAtivo ? (getCSSColor('--cor-texto-destaque') || '#0f172a') : (getCSSColor('--cor-texto-balao') || '#111827');
       recordCtx.textAlign = 'center';
       recordCtx.textBaseline = 'middle';
-      recordCtx.fillText(span.textContent, localX + (localW / 2), localY + (localH / 2));
+
+      // 1. DESENHA A BORDA/CONTORNO POR TRÁS (COR DO BOTÃO DESTAQUE)
+      recordCtx.lineWidth = 6;
+      recordCtx.lineJoin = 'round';
+      recordCtx.strokeStyle = getCSSColor('--cor-destaque-palavra') || '#000000';
+      recordCtx.strokeText(span.textContent, posX, posY);
+
+      // 2. PREENCHE O MIOLO DO TEXTO POR CIMA
+      recordCtx.fillStyle = isAtivo ? (getCSSColor('--cor-texto-destaque') || '#0f172a') : (getCSSColor('--cor-texto-balao') || '#111827');
+      recordCtx.fillText(span.textContent, posX, posY);
+
       recordCtx.restore();
     });
   }
