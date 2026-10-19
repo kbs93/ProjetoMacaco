@@ -9,6 +9,8 @@ let recordedChunks = [];
 export let recordCanvas = document.createElement('canvas');
 export let recordCtx = recordCanvas.getContext('2d');
 
+
+
 export function renderizarBalaoNoGravador() {
   if (!speechBubble || speechBubble.style.display === 'none') return;
 
@@ -19,16 +21,18 @@ export function renderizarBalaoNoGravador() {
   const scaleCanvasY = recordCanvas.height / rectCanvas.height;
 
   const bubbleScaleInput = parseFloat(document.getElementById('bubble-scale')?.value) || 1.0;
-  const baseW = 340;
-  const baseH = 160;
+  
+  // Usa o tamanho real do balão do DOM para não distorcer proporções
+  const baseW = rectBalao.width / bubbleScaleInput;
+  const baseH = rectBalao.height / bubbleScaleInput;
 
   const centroX = (rectBalao.left + rectBalao.width / 2 - rectCanvas.left) * scaleCanvasX;
   const centroY = (rectBalao.top + rectBalao.height / 2 - rectCanvas.top) * scaleCanvasY;
 
   const corFundoBalao = getCSSColor('--cor-fundo-balao') || '#ffffff';
   const corBordaBalao = getCSSColor('--cor-borda-balao') || '#7c7a7a';
-  const borderWidth = 5;
-  const borderRadius = 28;
+  const borderWidth = 6;
+  const r = 26; // Raio das pontas arredondadas
 
   recordCtx.save();
   recordCtx.translate(centroX, centroY);
@@ -37,30 +41,37 @@ export function renderizarBalaoNoGravador() {
   const bx = -baseW / 2;
   const by = -baseH / 2;
 
+  // CAMINHO ÚNICO: Balão + Cauda integrados (resolve a borda cinzenta contínua)
   recordCtx.beginPath();
-  recordCtx.moveTo(bx + 35, by + baseH - 2);
-  recordCtx.lineTo(bx + 70, by + baseH - 2);
-  recordCtx.lineTo(bx + 20.44, by + baseH + 40);
+  recordCtx.moveTo(bx + r, by);
+  // Borda superior
+  recordCtx.lineTo(bx + baseW - r, by);
+  recordCtx.quadraticCurveTo(bx + baseW, by, bx + baseW, by + r);
+  // Borda direita
+  recordCtx.lineTo(bx + baseW, by + baseH - r);
+  recordCtx.quadraticCurveTo(bx + baseW, by + baseH, bx + baseW - r, by + baseH);
+  // Borda inferior (lado direito até a cauda)
+  recordCtx.lineTo(bx + 80, by + baseH);
+  // Ponta da cauda
+  recordCtx.lineTo(bx + 26, by + baseH + 34);
+  recordCtx.lineTo(bx + 44, by + baseH);
+  // Borda inferior (lado esquerdo)
+  recordCtx.lineTo(bx + r, by + baseH);
+  recordCtx.quadraticCurveTo(bx, by + baseH, bx, by + baseH - r);
+  // Borda esquerda
+  recordCtx.lineTo(bx, by + r);
+  recordCtx.quadraticCurveTo(bx, by, bx + r, by);
   recordCtx.closePath();
-  recordCtx.fillStyle = corBordaBalao;
-  recordCtx.fill();
 
-  recordCtx.beginPath();
-  recordCtx.roundRect(bx, by, baseW, baseH, borderRadius);
+  // Preenchimento e contorno perfeitos sem costura
   recordCtx.fillStyle = corFundoBalao;
   recordCtx.fill();
   recordCtx.lineWidth = borderWidth;
+  recordCtx.lineJoin = 'round';
   recordCtx.strokeStyle = corBordaBalao;
   recordCtx.stroke();
 
-  recordCtx.beginPath();
-  recordCtx.moveTo(bx + 39, by + baseH - borderWidth);
-  recordCtx.lineTo(bx + 67, by + baseH - borderWidth);
-  recordCtx.lineTo(bx + 26.99, by + baseH + 33);
-  recordCtx.closePath();
-  recordCtx.fillStyle = corFundoBalao;
-  recordCtx.fill();
-
+  // RENDERIZAÇÃO DAS PALAVRAS
   if (palavrasElementos && palavrasElementos.length > 0) {
     const centroBalaoDOMX = rectBalao.left + rectBalao.width / 2;
     const centroBalaoDOMY = rectBalao.top + rectBalao.height / 2;
@@ -86,7 +97,9 @@ export function renderizarBalaoNoGravador() {
       }
 
       recordCtx.save();
-      recordCtx.font = `${computed.fontStyle} ${computed.fontWeight} ${fontSizePx}px ${computed.fontFamily}`;
+      // Força peso 'bold' / 800 caso o computed volte como normal
+      const weight = (computed.fontWeight === 'normal' || parseInt(computed.fontWeight) < 600) ? 'bold' : computed.fontWeight;
+      recordCtx.font = `${computed.fontStyle} ${weight} ${fontSizePx}px ${computed.fontFamily}`;
       recordCtx.fillStyle = isAtivo ? (getCSSColor('--cor-texto-destaque') || '#0f172a') : (getCSSColor('--cor-texto-balao') || '#111827');
       recordCtx.textAlign = 'center';
       recordCtx.textBaseline = 'middle';
@@ -97,6 +110,11 @@ export function renderizarBalaoNoGravador() {
 
   recordCtx.restore();
 }
+
+
+
+
+
 
 export function toggleRecording(onTogglePlayPause) {
   const recordBtn = document.getElementById('record-video-btn');
