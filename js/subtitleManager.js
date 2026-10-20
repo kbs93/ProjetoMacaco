@@ -124,7 +124,7 @@ export function atualizarListaFrases() {
     }
   });
 
-  listaFrases = frasesProcessadas.length > 0 ? frasesProcessadas : ["..."];
+  listaFrases = frasesProcessadas.length > 0 ? frasesProcessadas : ["Olá mundo..."];
 
   if (timelineGravada.length > 0) {
     timelineGravada.forEach((item, idx) => {

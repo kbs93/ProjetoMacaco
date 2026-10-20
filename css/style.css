@@ -124,9 +124,8 @@ input[type="range"]::-moz-range-thumb {
   display: block;
   max-height: none;
   overflow: visible;
-
-  /* EFEITO DE CONTORNO (STROKE) CONTROLADO PELO BOTÃO DESTAQUE */
-  -webkit-text-stroke: 4px var(--cor-destaque-palavra);
+/* EFEITO DE CONTORNO (STROKE) CONTROLADO PELO SLIDER */
+  -webkit-text-stroke: var(--espessura-contorno-texto, 4px) var(--cor-destaque-palavra);
   paint-order: stroke fill;
 }
 

@@ -306,11 +306,13 @@ audioElement.addEventListener('ended', () => {
   const capFontSize = document.getElementById('cap-font-size');
   const capFontSizeVal = document.getElementById('cap-font-size-val');
   const capTextColor = document.getElementById('cap-text-color');
- 
-  const capHighlightColor = document.getElementById('cap-highlight-color');
+ const capHighlightColor = document.getElementById('cap-highlight-color');
+  const capStrokeSize = document.getElementById('cap-stroke-size');
+  const capStrokeVal = document.getElementById('cap-stroke-val');
   const screenBgColor = document.getElementById('screen-bg-color');
   const capBoldBtn = document.getElementById('cap-bold-btn');
   const capItalicBtn = document.getElementById('cap-italic-btn');
+
 
   let isBold = true;
   let isItalic = false;
@@ -331,13 +333,20 @@ audioElement.addEventListener('ended', () => {
     speechText.style.color = e.target.value;
   });
 
-
-
-  capHighlightColor.addEventListener('input', (e) => {
+capHighlightColor.addEventListener('input', (e) => {
     document.documentElement.style.setProperty('--cor-destaque-palavra', e.target.value);
   });
 
+  if (capStrokeSize) {
+    capStrokeSize.addEventListener('input', (e) => {
+      const valor = `${e.target.value}px`;
+      document.documentElement.style.setProperty('--espessura-contorno-texto', valor);
+      if (capStrokeVal) capStrokeVal.textContent = valor;
+    });
+  }
+
   screenBgColor.addEventListener('input', (e) => {
+
     document.documentElement.style.setProperty('--cor-fundo-tela', e.target.value);
     atualizarCoresDoCSS();
   });
